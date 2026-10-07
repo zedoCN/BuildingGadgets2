@@ -105,9 +105,10 @@
   "item.buildinggadgets2.gadget_exchanging": "更替小帮手",
   "item.buildinggadgets2.redprint": "红图",
   "item.buildinggadgets2.template": "模板",
+  "item.buildinggadgets2.template_manager": "模板管理器",
   "itemGroup.buildinggadgets2": "建筑小帮手2",
   "key.buildinggadgets2.anchor": "锚定点",
-  "key.buildinggadgets2.category": "建筑小帮手 2",
+  "key.category.buildinggadgets2.main": "建筑小帮手 2",
   "key.buildinggadgets2.range": "范围调节",
   "key.buildinggadgets2.settings_menu": "配置菜单",
   "key.buildinggadgets2.undo": "撤销"

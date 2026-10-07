@@ -51,6 +51,12 @@ readback rather than relying only on the client cache.
   material list, and the 3D template preview displayed correctly.
 - Authenticated automation RPC, screenshots, Java scratch, and block-hit
   right-click fallback were exercised against the real client.
+- A continuous automation demonstration repeated build/undo, copy/rotation/paste,
+  and template preview. Shutdown while holding the destruction gadget passed
+  after unregistering the overlay renderer before releasing its buffers.
+
+The existing Simplified Chinese translation is included; its keys now cover all
+113 entries in the generated English locale. The recording used an English test profile.
 
 The G radial menu reads GLFW's physical key state, so a synthetic
 `input.keyAction` cannot keep it open. This inherited behavior is not treated
