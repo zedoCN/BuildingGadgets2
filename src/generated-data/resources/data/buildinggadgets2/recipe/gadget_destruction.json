@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "group": "buildinggadgets2",
   "key": {
     "e": "#c:ender_pearls",

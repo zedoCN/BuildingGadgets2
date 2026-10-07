@@ -34,6 +34,7 @@ neoForge {
 sourceSets.main.resources {
     srcDir 'src/generated-client/resources'
     srcDir 'src/generated-data/resources'
+    exclude '**/.cache/**'
 }
 processResources {
     def properties = ['minecraft_version', 'minecraft_version_range', 'neo_version', 'neo_version_range', 'loader_version_range', 'mod_id', 'mod_name', 'mod_license', 'mod_version', 'mod_authors', 'mod_description'].collectEntries { [(it): project.property(it)] }
