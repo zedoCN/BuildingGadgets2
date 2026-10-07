@@ -1,8 +1,13 @@
 {
-    "pack": {
-        "description": "examplemod resources",
-        "pack_format": 9,
-        "forge:resource_pack_format": 9,
-        "forge:data_pack_format": 10
-    }
+  "pack": {
+    "description": "Building Gadgets 2 resources",
+    "min_format": [
+      88,
+      0
+    ],
+    "max_format": [
+      107,
+      1
+    ]
+  }
 }

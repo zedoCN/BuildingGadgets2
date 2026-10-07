@@ -23,7 +23,7 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 import java.util.List;
 
-import static net.minecraft.client.renderer.LevelRenderer.getLightCoords;
+import static net.minecraft.util.LightCoordsUtil.getLightCoords;
 
 public class RenderFluidBlock {
     private static BakedQuad createQuad(List<Vec3> vectors, Material.Baked material, Direction face, float u1, float u2, float v1, float v2) {

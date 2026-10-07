@@ -18,7 +18,7 @@ public class BG2ItemTags extends ItemTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         tag(ItemTags.MINING_LOOT_ENCHANTABLE)
-                .add(Registration.Exchanging_Gadget.get());
+                .add(Registration.Exchanging_Gadget.getKey());
     }
 
     @Override

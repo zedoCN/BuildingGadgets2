@@ -8,6 +8,8 @@ import java.util.function.BiConsumer;
 
 public class GuiTextFieldBase extends EditBox {
     private boolean suspended;
+    private boolean numericOnly;
+    private String lastValidValue = "";
     private String valueDefault, valueOld;
     private BiConsumer<GuiTextFieldBase, String> postModification;
 
@@ -15,16 +17,32 @@ public class GuiTextFieldBase extends EditBox {
         super(fontRenderer, x, y, width, 15, Component.empty());
 
         setMaxLength(50);
-        setFilter(s -> {
-            valueOld = getValue();
-            return true;
+        setResponder(value -> {
+            if (!accepts(value)) {
+                int cursor = getCursorPosition();
+                super.setValue(lastValidValue);
+                setCursorPosition(Math.max(0, cursor - 1));
+                return;
+            }
+            valueOld = lastValidValue;
+            lastValidValue = value;
+            postModification(value);
         });
     }
 
     @Override
     public void setValue(String textIn) {
-        super.setValue(textIn);
-        postModification(textIn);
+        if (accepts(textIn)) super.setValue(textIn);
+    }
+
+    private boolean accepts(String value) {
+        if (!numericOnly || value.isEmpty() || "-".equals(value)) return true;
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 
     public void postModification(String text) {
@@ -36,18 +54,7 @@ public class GuiTextFieldBase extends EditBox {
     }
 
     public GuiTextFieldBase restrictToNumeric() {
-        setFilter(s -> {
-            valueOld = getValue();
-            if (s == null || s.isEmpty() || "-".equals(s))
-                return true;
-
-            try {
-                Integer.parseInt(s);
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        });
+        numericOnly = true;
 
         return this;
     }

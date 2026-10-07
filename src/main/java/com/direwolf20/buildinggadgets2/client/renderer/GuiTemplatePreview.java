@@ -4,30 +4,22 @@ import com.direwolf20.buildinggadgets2.util.FakeRenderingWorld;
 import com.direwolf20.buildinggadgets2.util.datatypes.StatePos;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.block.BlockQuadOutput;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import net.minecraft.core.BlockPos;
@@ -36,17 +28,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix3x2f;
-import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -93,8 +81,8 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
     // Non-AO model renderer. Free-floating ghost blocks: don't cull against neighbors.
     private @Nullable ModelBlockRenderer modelBlockRenderer;
 
-    public GuiTemplatePreview(MultiBufferSource.BufferSource bufferSource) {
-        super(bufferSource);
+    public GuiTemplatePreview() {
+        super();
     }
 
     @Override
@@ -124,7 +112,7 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
     }
 
     @Override
-    protected void renderToTexture(State state, PoseStack poseStack) {
+    protected void renderToTexture(State state, PoseStack poseStack, net.minecraft.client.renderer.SubmitNodeCollector collector) {
         if (state.statePosList != cachedList || !java.util.Objects.equals(state.templateUuid, cachedUuid)) {
             rebuildCache(state);
         }
@@ -157,7 +145,7 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
         poseStack.translate(-cachedCenterX, -cachedCenterY, -cachedCenterZ);
 
         // Step 4: push the PoseStack's top matrix onto the RenderSystem model-view stack. Our
-        // manual draw body (mirrors RenderType.draw()) reads RenderSystem.getModelViewMatrix() —
+        // prepared render type reads RenderSystem.getModelViewMatrixCopy() —
         // not a PoseStack — for DynamicTransforms, same as VBORenderer does for the in-world path.
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushMatrix();
@@ -221,9 +209,9 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
         Map<ChunkSectionLayer, BufferBuilder> builders = new EnumMap<>(ChunkSectionLayer.class);
         Map<ChunkSectionLayer, ByteBufferBuilder> byteBuilders = new EnumMap<>(ChunkSectionLayer.class);
         for (ChunkSectionLayer layer : LAYERS) {
-            ByteBufferBuilder bb = new ByteBufferBuilder(layer.pipeline().getVertexFormat().getVertexSize() * 1024);
+            ByteBufferBuilder bb = new ByteBufferBuilder(layer.pipeline().getVertexFormatBinding(0).getVertexSize() * 1024);
             byteBuilders.put(layer, bb);
-            builders.put(layer, new BufferBuilder(bb, VertexFormat.Mode.QUADS, layer.pipeline().getVertexFormat()));
+            builders.put(layer, new BufferBuilder(bb, com.mojang.blaze3d.PrimitiveTopology.QUADS, layer.pipeline().getVertexFormatBinding(0)));
         }
 
         final float alpha = 1.0f;
@@ -310,79 +298,22 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
         cachedUuid = state.templateUuid;
     }
 
-    /**
-     * Mirrors {@link RenderType#draw(MeshData)}'s body against a pre-uploaded vertex GpuBuffer.
-     * Copy of {@link VBORenderer}'s {@code drawLayer}, minus the layering-transform handling
-     * (VIEW_OFFSET_Z_LAYERING's effect is a no-op here since there's no real chunk geometry to
-     * avoid Z-fighting against in the GUI preview).
-     */
+    /** Draw retained preview meshes through vanilla's prepared textures, uniforms and render target. */
     private void drawLayer(ChunkSectionLayer layer, RenderType bg2Type) {
         LayerCache cache = layerCaches.get(layer);
         if (cache == null || cache.vertexBuffer == null || cache.indexCount == 0) return;
 
-        RenderSetup setup = bg2Type.state;
-        java.util.function.Consumer<Matrix4fStack> layeringModifier = setup.layeringTransform.getModifier();
-        Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
-        if (layeringModifier != null) {
-            modelViewStack.pushMatrix();
-            layeringModifier.accept(modelViewStack);
-        }
-
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-                .writeTransform(
-                        RenderSystem.getModelViewMatrix(),
-                        new Vector4f(1f, 1f, 1f, 1f),
-                        new Vector3f(),
-                        setup.textureTransform.getMatrix());
-        Map<String, RenderSetup.TextureAndSampler> textures = setup.getTextures();
-
-        // Output target: use whatever RenderSystem's override currently points at — vanilla's
-        // PictureInPictureRenderer set it to our PiP color/depth textures before calling
-        // renderToTexture. That's the whole reason PiP works: the manual draw writes to them.
-        RenderTarget renderTarget = bg2Type.outputTarget().getRenderTarget();
-        GpuTextureView colorTexture = RenderSystem.outputColorTextureOverride != null
-                ? RenderSystem.outputColorTextureOverride
-                : renderTarget.getColorTextureView();
-        GpuTextureView depthTexture = renderTarget.useDepth
-                ? (RenderSystem.outputDepthTextureOverride != null
-                        ? RenderSystem.outputDepthTextureOverride
-                        : renderTarget.getDepthTextureView())
-                : null;
-
         GpuBuffer indices;
-        VertexFormat.IndexType indexType;
+        com.mojang.blaze3d.IndexType indexType;
         if (cache.sortedIndexBuffer != null) {
             indices = cache.sortedIndexBuffer;
             indexType = cache.autoIndexType;
         } else {
-            RenderSystem.AutoStorageIndexBuffer auto = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+            RenderSystem.AutoStorageIndexBuffer auto = RenderSystem.getSequentialBuffer(com.mojang.blaze3d.PrimitiveTopology.QUADS);
             indices = auto.getBuffer(cache.indexCount);
             indexType = auto.type();
         }
-
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        try (RenderPass pass = encoder.createRenderPass(
-                () -> "BG2 gui preview draw " + layer.name(),
-                colorTexture, OptionalInt.empty(),
-                depthTexture, OptionalDouble.empty())) {
-            pass.setPipeline(setup.pipeline);
-            // No scissor dance — vanilla's PiP render target is our whole drawable area, and the
-            // final GUI-rect scissor is applied by the BlitRenderState step *after* renderToTexture
-            // returns. Setting a scissor here would clip against main-window coordinates, which
-            // are irrelevant to the off-screen PiP target.
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", dynamicTransforms);
-            pass.setVertexBuffer(0, cache.vertexBuffer);
-            for (Map.Entry<String, RenderSetup.TextureAndSampler> e : textures.entrySet()) {
-                pass.bindTexture(e.getKey(), e.getValue().textureView(), e.getValue().sampler());
-            }
-            pass.setIndexBuffer(indices, indexType);
-            pass.drawIndexed(0, 0, cache.indexCount, 1);
-        }
-
-        if (layeringModifier != null) {
-            modelViewStack.popMatrix();
-        }
+        bg2Type.prepare().drawFromBuffer(cache.vertexBuffer, indices, indexType, 0, 0, cache.indexCount);
     }
 
     private void clearCache() {
@@ -405,7 +336,7 @@ public class GuiTemplatePreview extends PictureInPictureRenderer<GuiTemplatePrev
     private static final class LayerCache implements AutoCloseable {
         GpuBuffer vertexBuffer;
         int indexCount;
-        VertexFormat.IndexType autoIndexType;
+        com.mojang.blaze3d.IndexType autoIndexType;
         GpuBuffer sortedIndexBuffer;
         MeshData.SortState sortState;
 

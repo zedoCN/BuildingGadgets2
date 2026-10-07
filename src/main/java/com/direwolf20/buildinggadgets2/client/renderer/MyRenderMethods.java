@@ -4,7 +4,7 @@ import com.direwolf20.buildinggadgets2.util.GadgetNBT;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.direwolf20.buildinggadgets2.client.renderer.PreviewGeometry;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
@@ -30,7 +30,7 @@ public class MyRenderMethods {
         int dy = (startPos.getY() > endPos.getY()) ? startPos.getY() + 1 : endPos.getY() + 1;
         int dz = (startPos.getZ() > endPos.getZ()) ? startPos.getZ() + 1 : endPos.getZ() + 1;
 
-        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+        PreviewGeometry buffer = PreviewGeometry.INSTANCE;
         VertexConsumer builder = buffer.getBuffer(RenderTypes.lines());
 
         matrix.pushPose();
@@ -128,7 +128,7 @@ public class MyRenderMethods {
         builder.addVertex(matrix, startX, endY, startZ).setColor(red, green, blue, alpha);
     }
 
-    public static void renderLines(PoseStack matrix, BlockPos startPos, BlockPos endPos, Color color, MultiBufferSource buffer) {
+    public static void renderLines(PoseStack matrix, BlockPos startPos, BlockPos endPos, Color color, PreviewGeometry buffer) {
         //We want to draw from the starting position to the (ending position)+1
         int x = Math.min(startPos.getX(), endPos.getX()), y = Math.min(startPos.getY(), endPos.getY()), z = Math.min(startPos.getZ(), endPos.getZ());
 
@@ -173,7 +173,7 @@ public class MyRenderMethods {
     }
 
     //This one does not block water
-    public static void renderBoxSolid(PoseStack.Pose pose, Matrix4f matrix, MultiBufferSource buffer, double x, double y, double z, double xEnd, double yEnd, double zEnd, float red, float green, float blue, float alpha) {
+    public static void renderBoxSolid(PoseStack.Pose pose, Matrix4f matrix, PreviewGeometry buffer, double x, double y, double z, double xEnd, double yEnd, double zEnd, float red, float green, float blue, float alpha) {
         VertexConsumer builder = buffer.getBuffer(OurRenderTypes.TRANSPARENT_BOX);
 
         //careful: mc want's it's vertices to be defined CCW - if you do it the other way around weird cullling issues will arise
@@ -222,7 +222,7 @@ public class MyRenderMethods {
         builder.addVertex(matrix, startX, endY, startZ).setColor(red, green, blue, alpha).setUv(dummyU1, dummyV0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0F, 0F, 1F);
     }
 
-    public static void renderBoxSolid(PoseStack pose, Matrix4f matrix, MultiBufferSource buffer, BlockPos pos, float r, float g, float b, float alpha) {
+    public static void renderBoxSolid(PoseStack pose, Matrix4f matrix, PreviewGeometry buffer, BlockPos pos, float r, float g, float b, float alpha) {
         double x = pos.getX() - 0.001;
         double y = pos.getY() - 0.001;
         double z = pos.getZ() - 0.001;
@@ -233,7 +233,7 @@ public class MyRenderMethods {
         renderBoxSolid(pose.last(), matrix, buffer, x, y, z, xEnd, yEnd, zEnd, r, g, b, alpha);
     }
 
-    public static void renderFaceSolid(PoseStack pose, Matrix4f matrix, MultiBufferSource buffer, BlockPos pos, Direction direction, float r, float g, float b, float alpha) {
+    public static void renderFaceSolid(PoseStack pose, Matrix4f matrix, PreviewGeometry buffer, BlockPos pos, Direction direction, float r, float g, float b, float alpha) {
         double x = pos.getX() - 0.001;
         double y = pos.getY() - 0.001;
         double z = pos.getZ() - 0.001;

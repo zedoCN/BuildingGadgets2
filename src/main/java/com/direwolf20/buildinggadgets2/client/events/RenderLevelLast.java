@@ -9,7 +9,7 @@ import com.direwolf20.buildinggadgets2.common.items.GadgetDestruction;
 import com.direwolf20.buildinggadgets2.util.GadgetNBT;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.direwolf20.buildinggadgets2.client.renderer.PreviewGeometry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -48,9 +48,9 @@ public class RenderLevelLast {
     public static void renderSelectedBlock(RenderLevelStageEvent event, BlockPos pos) {
         final Minecraft mc = Minecraft.getInstance();
 
-        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+        PreviewGeometry buffer = PreviewGeometry.INSTANCE;
 
-        Vec3 view = mc.gameRenderer.getMainCamera().position();
+        Vec3 view = mc.gameRenderer.mainCamera().position();
 
         PoseStack matrix = event.getPoseStack();
         matrix.pushPose();

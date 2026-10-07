@@ -8,7 +8,7 @@ import com.direwolf20.buildinggadgets2.util.VectorHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.direwolf20.buildinggadgets2.client.renderer.PreviewGeometry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
@@ -38,13 +38,13 @@ public class DestructionRenderer {
         if (level.getBlockState(startBlock) == Registration.RenderBlock.get().defaultBlockState())
             return;
 
-        Vec3 playerPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 playerPos = Minecraft.getInstance().gameRenderer.mainCamera().position();
 
         PoseStack stack = evt.getPoseStack();
         stack.pushPose();
         stack.translate(-playerPos.x(), -playerPos.y(), -playerPos.z());
 
-        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+        PreviewGeometry buffer = PreviewGeometry.INSTANCE;
         VertexConsumer builder = buffer.getBuffer(OurRenderTypes.MissingBlockOverlay);
         final int[] counter = {BuildingUtils.getEnergyStored(gadget)};
         final int energyCost = BuildingUtils.getEnergyCost(gadget);

@@ -65,7 +65,7 @@ public class RenderBlockBER implements BlockEntityRenderer<RenderBlockBE, Render
         // block emits light, blend that emission into the lightmap so the ghost doesn't appear darker
         // than the real block it's about to become — this softens the brightness pop at transition.
         if (state.level != null) {
-            int sampled = LevelRenderer.getLightCoords(state.level, state.blockPos);
+            int sampled = net.minecraft.util.LightCoordsUtil.getLightCoords(state.level, state.blockPos);
             if (state.renderBlock != null) {
                 int emission = state.renderBlock.getLightEmission(state.level, state.blockPos);
                 if (emission > 0) {
@@ -164,7 +164,7 @@ public class RenderBlockBER implements BlockEntityRenderer<RenderBlockBE, Render
                 // seems to double-darken these values. Undo the CardinalLighting scaling after
                 // tesselateBlock so we keep the AO but not the extra darkening.
                 net.minecraft.world.level.CardinalLighting lighting = state.level.cardinalLighting();
-                collector.submitCustomGeometry(poseStack, Sheets.cutoutBlockSheet(), (pose, buffer) -> {
+                collector.submitCustomGeometry(poseStack, Sheets.cutoutBlockItemSheet(), (pose, buffer) -> {
                     ModelBlockRenderer renderer = new ModelBlockRenderer(true, false, Minecraft.getInstance().getBlockColors());
                     renderer.tesselateBlock(
                             (x, y, z, quad, instance) -> {
@@ -296,7 +296,7 @@ public class RenderBlockBER implements BlockEntityRenderer<RenderBlockBE, Render
     /**
      * renderType 5: "snap" variant of the squish animation with a darkness modulation that fades
      * as the block settles. Uses tesselateBlock for proper AO, then applies darkness via per-vertex
-     * color scaling and routes through DireVertexConsumerSquished. Uses Sheets.cutoutBlockSheet()
+     * color scaling and routes through DireVertexConsumerSquished. Uses Sheets.cutoutBlockItemSheet()
      * (entity pipeline) so CardinalLighting reversal IS needed.
      */
     private void renderSquishedSnap(
@@ -311,7 +311,7 @@ public class RenderBlockBER implements BlockEntityRenderer<RenderBlockBE, Render
         float scale = Mth.lerp(state.scale, 0.75f, 1f);
         int darkChannel = Math.round(darkness * 255f);
         boolean isSolid = renderBlock.isSolidRender();
-        RenderType renderType = Sheets.cutoutBlockSheet();
+        RenderType renderType = Sheets.cutoutBlockItemSheet();
         boolean effectiveAdjustUV = isSolid;
 
         if (!renderBlock.getFluidState().isEmpty()) {

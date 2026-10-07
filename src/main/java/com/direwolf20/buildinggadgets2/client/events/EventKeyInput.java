@@ -35,12 +35,12 @@ public class EventKeyInput {
 
         KeyMapping mode = KeyBindings.menuSettings;
         // TODO(port): 26.1 replaced KeyModifier.getActiveModifier() with getActiveModifiers() returning a List. Mapping "no active modifier" → "active modifiers list is empty".
-        if (!(mc.screen instanceof ModeRadialMenu) && mode.consumeClick() && ((mode.getKeyModifier() == KeyModifier.NONE
+        if (!(mc.gui.screen() instanceof ModeRadialMenu) && mode.consumeClick() && ((mode.getKeyModifier() == KeyModifier.NONE
                 && KeyModifier.getActiveModifiers().isEmpty()) || mode.getKeyModifier() != KeyModifier.NONE)) {
             if (tool.getItem() instanceof GadgetDestruction)
-                mc.setScreen(new DestructionGUI(tool, true));
+                mc.gui.setScreen(new DestructionGUI(tool, true));
             else
-                mc.setScreen(new ModeRadialMenu(tool));
+                mc.gui.setScreen(new ModeRadialMenu(tool));
         } else if (KeyBindings.undo.consumeClick()) {
             ClientPacketDistributor.sendToServer(new UndoPayload());
         } else if (KeyBindings.anchor.consumeClick()) {

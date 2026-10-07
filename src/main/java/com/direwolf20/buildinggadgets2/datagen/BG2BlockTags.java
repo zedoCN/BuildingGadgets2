@@ -4,6 +4,7 @@ import com.direwolf20.buildinggadgets2.BuildingGadgets2;
 import com.direwolf20.buildinggadgets2.setup.Registration;
 import com.direwolf20.buildinggadgets2.util.BG2Tags;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
@@ -21,16 +22,16 @@ public class BG2BlockTags extends BlockTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         tag(BG2Tags.BG2DENY)
-                .add(Blocks.PISTON_HEAD)
-                .add(Blocks.BEDROCK)
-                .add(Blocks.END_PORTAL_FRAME)
-                .add(Blocks.CANDLE_CAKE)
+                .add(BuiltInRegistries.BLOCK.getResourceKey(Blocks.PISTON_HEAD).orElseThrow())
+                .add(BuiltInRegistries.BLOCK.getResourceKey(Blocks.BEDROCK).orElseThrow())
+                .add(BuiltInRegistries.BLOCK.getResourceKey(Blocks.END_PORTAL_FRAME).orElseThrow())
+                .add(BuiltInRegistries.BLOCK.getResourceKey(Blocks.CANDLE_CAKE).orElseThrow())
                 .addTag(BlockTags.BEDS)
                 .addTag(BlockTags.PORTALS)
                 .addTag(BlockTags.DOORS);
 
         tag(Tags.Blocks.RELOCATION_NOT_SUPPORTED)
-                .add(Registration.RenderBlock.get());
+                .add(Registration.RenderBlock.getKey());
     }
 
     @Override

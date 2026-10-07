@@ -7,20 +7,13 @@ import com.direwolf20.buildinggadgets2.util.*;
 import com.direwolf20.buildinggadgets2.util.datatypes.StatePos;
 import com.direwolf20.buildinggadgets2.util.modes.BaseMode;
 import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.ScissorState;
-import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.QuadInstance;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -29,12 +22,9 @@ import net.minecraft.client.renderer.block.BlockQuadOutput;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.rendertype.LayeringTransform;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.world.level.BlockAndLightGetter;
 import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -52,15 +42,11 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -70,7 +56,7 @@ import java.util.UUID;
  * build each one into a {@link MeshData}, upload its vertex bytes into a persistent
  * {@link GpuBuffer} (USAGE_VERTEX | USAGE_COPY_DST), keep the sort state for translucent layers.
  * <p>
- * Every frame: for each layer, run the same body as {@link RenderType#draw(MeshData)} but with our
+ * Every frame: for each layer, use {@link RenderType#prepare()} with our
  * pre-uploaded {@link GpuBuffer} as the vertex source — no re-upload, no re-tesselation.
  * <p>
  * Sort-every-N-frames: rebuild the sorted index buffer from the cached {@link MeshData.SortState}
@@ -104,7 +90,7 @@ public class VBORenderer {
     private static final class LayerCache implements AutoCloseable {
         GpuBuffer vertexBuffer;      // persistent; lives across frames.
         int indexCount;              // drawIndexed(0, 0, indexCount, 1).
-        VertexFormat.IndexType autoIndexType;  // for the non-sorted path (from sharedSequentialQuad).
+        com.mojang.blaze3d.IndexType autoIndexType;  // for the non-sorted path (from sharedSequentialQuad).
 
         GpuBuffer sortedIndexBuffer; // persistent; translucent only.
         MeshData.SortState sortState;// centroids for re-sorting.
@@ -228,9 +214,9 @@ public class VBORenderer {
         Map<ChunkSectionLayer, BufferBuilder> builders = new EnumMap<>(ChunkSectionLayer.class);
         Map<ChunkSectionLayer, ByteBufferBuilder> byteBuilders = new EnumMap<>(ChunkSectionLayer.class);
         for (ChunkSectionLayer layer : LAYERS) {
-            ByteBufferBuilder bb = new ByteBufferBuilder(layer.pipeline().getVertexFormat().getVertexSize() * 1024);
+            ByteBufferBuilder bb = new ByteBufferBuilder(layer.pipeline().getVertexFormatBinding(0).getVertexSize() * 1024);
             byteBuilders.put(layer, bb);
-            builders.put(layer, new BufferBuilder(bb, VertexFormat.Mode.QUADS, layer.pipeline().getVertexFormat()));
+            builders.put(layer, new BufferBuilder(bb, com.mojang.blaze3d.PrimitiveTopology.QUADS, layer.pipeline().getVertexFormatBinding(0)));
         }
 
         // Pre-compute the byte alpha we want on every vertex. ARGB.color(float, int) stomps the alpha byte
@@ -312,7 +298,7 @@ public class VBORenderer {
 
         // Build each non-empty layer's MeshData, upload its vertices to a persistent GpuBuffer,
         // then drop the MeshData. For translucent: also build a sorted index buffer on the GPU.
-        Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera().position();
         Vec3 subtracted = projectedView.subtract(renderPos.getX(), renderPos.getY(), renderPos.getZ());
         Vector3f sortPos = new Vector3f((float) subtracted.x, (float) subtracted.y, (float) subtracted.z);
 
@@ -356,7 +342,7 @@ public class VBORenderer {
     }
 
     public static void drawCopyBox(PoseStack matrix, ItemStack gadget, String mode) {
-        Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera().position();
         matrix.pushPose();
         matrix.translate(-projectedView.x(), -projectedView.y(), -projectedView.z());
         BlockPos start = GadgetNBT.getCopyStartPos(gadget);
@@ -367,7 +353,7 @@ public class VBORenderer {
     }
 
     public static void drawBoundBox(PoseStack matrix, BlockPos blockPos) {
-        Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera().position();
         matrix.pushPose();
         matrix.translate(-projectedView.x(), -projectedView.y(), -projectedView.z());
         Color color = Color.BLUE;
@@ -393,14 +379,14 @@ public class VBORenderer {
     }
 
     /**
-     * Per-frame draw. Issues one manual {@link RenderPass} per cached layer, reusing the persistent
+     * Per-frame draw. Issues one prepared draw per cached layer, reusing the persistent
      * {@link GpuBuffer}s populated by {@link #generateRender}. No CPU→GPU vertex re-upload.
      */
     public static void drawRender(RenderLevelStageEvent evt, Player player, ItemStack gadget) {
         if (layerCaches.isEmpty() || statePosCache == null) {
             return;
         }
-        Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera().position();
         BlockHitResult lookingAt = VectorHelper.getLookingAt(player, gadget);
         BlockPos anchorPos = GadgetNBT.getAnchorPos(gadget);
         BlockPos renderPos = anchorPos.equals(GadgetNBT.nullPos) ? lookingAt.getBlockPos() : anchorPos;
@@ -463,7 +449,7 @@ public class VBORenderer {
             int energyStored = BuildingUtils.getEnergyStored(gadget);
             int energyCost = BuildingUtils.getEnergyCost(gadget);
             PoseStack matrix = evt.getPoseStack();
-            var buffersource = Minecraft.getInstance().renderBuffers().bufferSource();
+            var buffersource = PreviewGeometry.INSTANCE;
             for (StatePos statePos : buildList) {
                 if (availableItems <= 0 || energyStored < energyCost) {
                     matrix.pushPose();
@@ -476,82 +462,26 @@ public class VBORenderer {
                 availableItems--;
                 energyStored -= energyCost;
             }
+            buffersource.endBatch();
         }
     }
 
-    /**
-     * Run one manual {@link RenderPass} for a single cached layer. Mirrors the body of
-     * {@link RenderType#draw(MeshData)} but with a pre-uploaded GPU vertex buffer instead of the
-     * per-frame immediate upload.
-     */
+    /** Draw retained preview meshes through vanilla's prepared textures, uniforms and render target. */
     private static void drawLayer(ChunkSectionLayer layer, RenderType bg2Type) {
         LayerCache cache = layerCaches.get(layer);
         if (cache == null || cache.vertexBuffer == null || cache.indexCount == 0) return;
 
-        RenderSetup state = bg2Type.state;
-        Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
-        java.util.function.Consumer<Matrix4fStack> layeringModifier = state.layeringTransform.getModifier();
-        if (layeringModifier != null) {
-            modelViewStack.pushMatrix();
-            layeringModifier.accept(modelViewStack);
-        }
-
-        // Same dynamic transforms upload vanilla uses in RenderType.draw(). The pipeline's uniform layout
-        // expects a DynamicTransforms UBO slice — without this, the draw ends up with an identity MVP.
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-                .writeTransform(
-                        RenderSystem.getModelViewMatrix(),
-                        new Vector4f(1f, 1f, 1f, 1f),
-                        new Vector3f(),
-                        state.textureTransform.getMatrix());
-        Map<String, RenderSetup.TextureAndSampler> textures = state.getTextures();
-
-        RenderTarget renderTarget = bg2Type.outputTarget().getRenderTarget();
-        GpuTextureView colorTexture = RenderSystem.outputColorTextureOverride != null
-                ? RenderSystem.outputColorTextureOverride
-                : renderTarget.getColorTextureView();
-        GpuTextureView depthTexture = renderTarget.useDepth
-                ? (RenderSystem.outputDepthTextureOverride != null ? RenderSystem.outputDepthTextureOverride : renderTarget.getDepthTextureView())
-                : null;
-
-        // Pick the index buffer: translucent uses our persistent sorted buffer, everyone else leans
-        // on RenderSystem's shared sequential-quad index buffer (also a persistent GPU buffer).
         GpuBuffer indices;
-        VertexFormat.IndexType indexType;
+        com.mojang.blaze3d.IndexType indexType;
         if (cache.sortedIndexBuffer != null) {
             indices = cache.sortedIndexBuffer;
             indexType = cache.autoIndexType;
         } else {
-            RenderSystem.AutoStorageIndexBuffer auto = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+            RenderSystem.AutoStorageIndexBuffer auto = RenderSystem.getSequentialBuffer(com.mojang.blaze3d.PrimitiveTopology.QUADS);
             indices = auto.getBuffer(cache.indexCount);
             indexType = auto.type();
         }
-
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        try (RenderPass pass = encoder.createRenderPass(
-                () -> "BG2 preview draw " + layer.name(),
-                colorTexture, OptionalInt.empty(),
-                depthTexture, OptionalDouble.empty())) {
-            pass.setPipeline(state.pipeline);
-
-            ScissorState scissorState = RenderSystem.getScissorStateForRenderTypeDraws();
-            if (scissorState.enabled()) {
-                pass.enableScissor(scissorState.x(), scissorState.y(), scissorState.width(), scissorState.height());
-            }
-
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", dynamicTransforms);
-            pass.setVertexBuffer(0, cache.vertexBuffer);
-            for (Map.Entry<String, RenderSetup.TextureAndSampler> e : textures.entrySet()) {
-                pass.bindTexture(e.getKey(), e.getValue().textureView(), e.getValue().sampler());
-            }
-            pass.setIndexBuffer(indices, indexType);
-            pass.drawIndexed(0, 0, cache.indexCount, 1);
-        }
-
-        if (layeringModifier != null) {
-            modelViewStack.popMatrix();
-        }
+        bg2Type.prepare().drawFromBuffer(cache.vertexBuffer, indices, indexType, 0, 0, cache.indexCount);
     }
 
     /**
@@ -561,7 +491,7 @@ public class VBORenderer {
     public static void sortAll(BlockPos lookingAt) {
         if (layerCaches.isEmpty()) return;
 
-        Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 projectedView = Minecraft.getInstance().gameRenderer.mainCamera().position();
         Vec3 subtracted = projectedView.subtract(lookingAt.getX(), lookingAt.getY(), lookingAt.getZ());
         Vector3f sortPos = new Vector3f((float) subtracted.x, (float) subtracted.y, (float) subtracted.z);
         VertexSorting sorting = VertexSorting.byDistance(v -> -sortPos.distanceSquared(v));

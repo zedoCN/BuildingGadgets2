@@ -21,7 +21,8 @@ public class OurRenderTypes {
     public static final RenderPipeline DEBUG_TRIANGLE_STRIP = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(BuildingGadgets2.MODID, "pipeline/debug_triangle_strip"))
             .withCull(false)
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.TRIANGLE_STRIP)
             .build();
 
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {

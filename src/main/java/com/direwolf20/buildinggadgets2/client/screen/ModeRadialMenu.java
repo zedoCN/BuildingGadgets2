@@ -176,7 +176,7 @@ public class ModeRadialMenu extends Screen {
                 if (send) {
                     var mode = GadgetNBT.getMode(tool);
                     if (GadgetNBT.hasCopyUUID(tool) && mode.getId().getPath().equals("paste")) {
-                        getMinecraft().setScreen(new MaterialListGUI(tool));
+                        getMinecraft().gui.setScreen(new MaterialListGUI(tool));
                     }
                 }
 
@@ -205,9 +205,9 @@ public class ModeRadialMenu extends Screen {
 
                 getMinecraft().player.closeContainer();
                 if (mode.getId().getPath().equals("paste"))
-                    getMinecraft().setScreen(new PasteGUI(tool));
+                    getMinecraft().gui.setScreen(new PasteGUI(tool));
                 else
-                    getMinecraft().setScreen(new CopyGUI(tool));
+                    getMinecraft().gui.setScreen(new CopyGUI(tool));
                 return true;
             }));
 

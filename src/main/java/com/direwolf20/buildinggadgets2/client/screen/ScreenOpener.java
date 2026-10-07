@@ -5,10 +5,10 @@ import net.minecraft.world.item.ItemStack;
 
 public class ScreenOpener {
     public static void openDestructionScreen(ItemStack itemstack) {
-        Minecraft.getInstance().setScreen(new DestructionGUI(itemstack, false));
+        Minecraft.getInstance().gui.setScreen(new DestructionGUI(itemstack, false));
     }
 
     public static void openMaterialList(ItemStack itemstack) {
-        Minecraft.getInstance().setScreen(new MaterialListGUI(itemstack));
+        Minecraft.getInstance().gui.setScreen(new MaterialListGUI(itemstack));
     }
 }

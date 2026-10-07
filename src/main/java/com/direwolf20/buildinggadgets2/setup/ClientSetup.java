@@ -7,6 +7,8 @@ import com.direwolf20.buildinggadgets2.client.events.EventKeyInput;
 import com.direwolf20.buildinggadgets2.client.events.RenderLevelLast;
 import com.direwolf20.buildinggadgets2.client.renderer.GuiTemplatePreview;
 import com.direwolf20.buildinggadgets2.client.renderer.OurRenderTypes;
+import com.direwolf20.buildinggadgets2.client.renderer.PreviewGeometry;
+import net.neoforged.neoforge.event.GameShuttingDownEvent;
 import com.direwolf20.buildinggadgets2.client.screen.TemplateManagerGUI;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,6 +29,11 @@ public class ClientSetup {
         //Register our Render Events Class
         NeoForge.EVENT_BUS.register(RenderLevelLast.class);
         NeoForge.EVENT_BUS.register(EventKeyInput.class);
+        NeoForge.EVENT_BUS.addListener((GameShuttingDownEvent shutdown) -> {
+            // stop() fires before the final frame finishes. Remove the producer before freeing its buffers.
+            NeoForge.EVENT_BUS.unregister(RenderLevelLast.class);
+            PreviewGeometry.INSTANCE.close();
+        });
     }
 
     @SubscribeEvent
