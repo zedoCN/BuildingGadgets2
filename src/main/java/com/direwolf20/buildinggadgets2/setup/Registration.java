@@ -48,10 +48,11 @@ public class Registration {
     }
 
     //Blocks
+    // Animation blocks retain full collision and must support attached signs while they render.
     public static final DeferredHolder<Block, RenderBlock> RenderBlock = BLOCKS.registerBlock(
             "render_block",
             RenderBlock::new,
-            () -> BlockBehaviour.Properties.of().strength(20f).dynamicShape().noOcclusion());
+            () -> BlockBehaviour.Properties.of().strength(20f).dynamicShape().noOcclusion().forceSolidOn());
     public static final DeferredHolder<Block, TemplateManager> TemplateManager = BLOCKS.registerBlock(
             "template_manager",
             TemplateManager::new,

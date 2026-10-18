@@ -220,6 +220,7 @@ public abstract class BaseGadget extends Item {
         UUID undoUUID = GadgetNBT.peekUndoList(gadget);
         if (undoUUID == null) return false;
         ArrayList<StatePos> undoList = bg2Data.peekUndoList(undoUUID);
+        if (undoList == null || undoList.isEmpty()) return false;
         for (StatePos statePos : undoList) {
             if (!level.isLoaded(statePos.pos)) {
                 player.sendOverlayMessage(Component.translatable("buildinggadgets2.messages.undofailedunloaded", statePos.pos.toShortString()));

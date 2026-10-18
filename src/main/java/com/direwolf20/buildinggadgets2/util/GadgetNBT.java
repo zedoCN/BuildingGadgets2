@@ -276,12 +276,6 @@ public class GadgetNBT {
     }
 
     public static boolean getPasteReplace(ItemStack stack) {
-        if (!stack.has(BG2DataComponents.SETTING_TOGGLES.get(ToggleableSettings.PASTE_REPLACE))) {
-            if (stack.getItem() instanceof GadgetCutPaste)
-                return toggleSetting(stack, ToggleableSettings.PASTE_REPLACE.getName()); //Make PasteReplace true by default for cut/paste gadget
-            else
-                return false;
-        }
         return getSetting(stack, ToggleableSettings.PASTE_REPLACE.getName());
     }
 

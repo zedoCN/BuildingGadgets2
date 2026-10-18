@@ -12,12 +12,17 @@ repositories {
 }
 dependencies {
     implementation "maven.modrinth:curios:${curios_version}"
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+    if (!project.hasProperty('withoutAE2')) {
+        runtimeOnly "maven.modrinth:ae2:${ae2_version}"
+        runtimeOnly "maven.modrinth:guideme:${guideme_version}"
+    }
 }
 neoForge {
     enable { version = neo_version; disableRecompilation = true }
     accessTransformers.from file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {
-        client { client(); gameDirectory = file('runs/client'); programArguments.addAll '--username', 'TechPortTest'; if (project.hasProperty('testServer')) programArguments.addAll '--quickPlayMultiplayer', project.property('testServer') }
+        client { client(); gameDirectory = file('runs/client'); programArguments.addAll '--username', 'TechPortTest'; if (project.hasProperty('testServer')) programArguments.addAll '--quickPlayMultiplayer', project.property('testServer'); if (project.hasProperty('testWorld')) programArguments.addAll '--quickPlaySingleplayer', project.property('testWorld') }
         server { server(); gameDirectory = file('runs/server'); programArgument '--nogui' }
         clientData {
             type = 'clientData'

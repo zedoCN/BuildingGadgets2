@@ -75,3 +75,10 @@ file="META-INF/accesstransformer.cfg"
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="ae2"
+    type="optional"
+    versionRange="[26.2.1-alpha,26.3)"
+    ordering="AFTER"
+    side="BOTH"

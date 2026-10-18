@@ -86,10 +86,22 @@ public class GadgetCutPaste extends BaseGadget {
             }
             BG2Data bg2Data = BG2Data.get(Objects.requireNonNull(context.player().level().getServer()).overworld());
             ArrayList<StatePos> buildList = bg2Data.getCopyPasteList(uuid, false); //Don't remove the data just yet
-            Collections.reverse(buildList);
             ArrayList<TagPos> tagList = bg2Data.peekTEMap(uuid);
+            if (buildList == null || buildList.isEmpty() || tagList == null) return InteractionResult.PASS;
+            BlockPos pasteOrigin = getHitPos(context).above().offset(GadgetNBT.getRelativePaste(gadget));
+            if (!GadgetNBT.getPasteReplace(gadget)) {
+                for (StatePos statePos : buildList) {
+                    if (statePos.state.isAir()) continue;
+                    BlockPos target = pasteOrigin.offset(statePos.pos);
+                    if (!context.level().isLoaded(target) || !context.level().getBlockState(target).canBeReplaced()) {
+                        context.player().sendOverlayMessage(Component.translatable("buildinggadgets2.messages.pasteblocked"));
+                        return InteractionResult.PASS;
+                    }
+                }
+            }
+            Collections.reverse(buildList);
 
-            ArrayList<StatePos> actuallyBuiltList = BuildingUtils.buildWithTileData(context.level(), context.player(), buildList, getHitPos(context).above().offset(GadgetNBT.getRelativePaste(gadget)), tagList, gadget);
+            ArrayList<StatePos> actuallyBuiltList = BuildingUtils.buildWithTileData(context.level(), context.player(), buildList, pasteOrigin, tagList, gadget);
             if (!actuallyBuiltList.isEmpty())
                 GadgetNBT.clearAnchorPos(gadget);
             GadgetNBT.clearCopyUUID(gadget); // Erase copy UUID so the user doesn't get the 'are you sure' prompt

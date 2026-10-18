@@ -1,5 +1,5 @@
 package com.direwolf20.buildinggadgets2.integration;
-/*
+
 import appeng.api.config.Actionable;
 import appeng.api.features.GridLinkables;
 import appeng.api.features.IGridLinkableHandler;
@@ -52,11 +52,11 @@ public class AE2Methods {
     }
 
     public static void checkAE2ForItems(GlobalPos boundInventory, Player player, List<ItemStack> testArray, boolean simulate) {
-        Level level = getLevel(player.getServer(), boundInventory);
-        if (level == null) return;
+        Level level = getLevel(player.level().getServer(), boundInventory);
+        if (level == null || !level.hasChunkAt(boundInventory.pos())) return;
         BlockEntity blockEntity = level.getBlockEntity(boundInventory.pos());
         if (blockEntity == null) return;
-        if (blockEntity instanceof IWirelessAccessPoint accessPoint) {
+        if (blockEntity instanceof IWirelessAccessPoint accessPoint && accessPoint.isActive()) {
             IGrid grid = accessPoint.getGrid();
             if (grid == null) return;
             MEStorage networkInv = grid.getStorageService().getInventory();
@@ -75,11 +75,11 @@ public class AE2Methods {
     }
 
     public static void checkAE2ForFluids(GlobalPos boundInventory, Player player, FluidStack fluidStack, boolean simulate) {
-        Level level = getLevel(player.getServer(), boundInventory);
-        if (level == null) return;
+        Level level = getLevel(player.level().getServer(), boundInventory);
+        if (level == null || !level.hasChunkAt(boundInventory.pos())) return;
         BlockEntity blockEntity = level.getBlockEntity(boundInventory.pos());
         if (blockEntity == null) return;
-        if (blockEntity instanceof IWirelessAccessPoint accessPoint) {
+        if (blockEntity instanceof IWirelessAccessPoint accessPoint && accessPoint.isActive()) {
             IGrid grid = accessPoint.getGrid();
             if (grid == null) return;
             MEStorage networkInv = grid.getStorageService().getInventory();
@@ -95,11 +95,11 @@ public class AE2Methods {
     }
 
     public static void insertIntoAE2(Player player, GlobalPos boundInventory, ItemStack tempReturnedItem) {
-        Level level = getLevel(player.getServer(), boundInventory);
-        if (level == null) return;
+        Level level = getLevel(player.level().getServer(), boundInventory);
+        if (level == null || !level.hasChunkAt(boundInventory.pos())) return;
         BlockEntity blockEntity = level.getBlockEntity(boundInventory.pos());
         if (blockEntity == null) return;
-        if (blockEntity instanceof IWirelessAccessPoint accessPoint) {
+        if (blockEntity instanceof IWirelessAccessPoint accessPoint && accessPoint.isActive()) {
             IGrid grid = accessPoint.getGrid();
             if (grid == null) return;
             MEStorage networkInv = grid.getStorageService().getInventory();
@@ -110,21 +110,17 @@ public class AE2Methods {
     }
 
     public static void insertFluidIntoAE2(Player player, GlobalPos boundInventory, FluidStack returnedFluid) {
-        Level level = getLevel(player.getServer(), boundInventory);
-        if (level == null) return;
+        Level level = getLevel(player.level().getServer(), boundInventory);
+        if (level == null || !level.hasChunkAt(boundInventory.pos())) return;
         BlockEntity blockEntity = level.getBlockEntity(boundInventory.pos());
         if (blockEntity == null) return;
-        if (blockEntity instanceof IWirelessAccessPoint accessPoint) {
+        if (blockEntity instanceof IWirelessAccessPoint accessPoint && accessPoint.isActive()) {
             IGrid grid = accessPoint.getGrid();
             if (grid == null) return;
             MEStorage networkInv = grid.getStorageService().getInventory();
             AEFluidKey fluidKey = AEFluidKey.of(returnedFluid);
-            long amountInserted = networkInv.insert(fluidKey, returnedFluid.getAmount(), Actionable.SIMULATE, IActionSource.ofPlayer(player));
-            if (amountInserted == returnedFluid.getAmount()) { //Only insert it all!
-                networkInv.insert(fluidKey, returnedFluid.getAmount(), Actionable.MODULATE, IActionSource.ofPlayer(player));
-                returnedFluid.shrink(returnedFluid.getAmount()); //Ensure it clears completely
-            }
+            long amountInserted = networkInv.insert(fluidKey, returnedFluid.getAmount(), Actionable.MODULATE, IActionSource.ofPlayer(player));
+            returnedFluid.shrink((int) amountInserted);
         }
     }
 }
-*/

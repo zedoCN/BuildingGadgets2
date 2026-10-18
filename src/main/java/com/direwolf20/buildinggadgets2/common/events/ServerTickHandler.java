@@ -485,9 +485,11 @@ public class ServerTickHandler {
             level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 48);
             StatePos affectedBlock = new StatePos(blockState, blockPos);
 
-            boolean placed = level.setBlock(affectedBlock.pos, Registration.RenderBlock.get().defaultBlockState(), 3);
+            boolean placed = level.setBlock(affectedBlock.pos, Registration.RenderBlock.get().defaultBlockState(),
+                    net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE);
             RenderBlockBE be = (RenderBlockBE) level.getBlockEntity(affectedBlock.pos);
             if (placed && be != null) {
+                be.cutOperation = serverBuildList.buildUUID;
                 be.setRenderData(affectedBlock.state, Blocks.AIR.defaultBlockState(), serverBuildList.renderType);
             }
         }

@@ -8,17 +8,21 @@ NeoForge **26.2.0.88**, and **Java 25**. The original `buildinggadgets2` mod ID,
 items, recipes, data components, and saved-data format are retained. The existing
 upstream branch name `21.6` is retained; it does not describe this fork's Minecraft version.
 
-Install `buildinggadgets2-1.4.6-zedo.1+26.2.jar` in **both** the server and each
+Install `buildinggadgets2-1.4.6-zedo.2+26.2.jar` in **both** the server and each
 client. Replace any other Building Gadgets 2 jar. Curios **16.0.0+26.2** is optional
-at runtime and included in the development runs. AE2 and Patchouli integration
-were already disabled in the upstream 26.1.2 source and are not restored here.
+at runtime and included in the development runs. AE2 **26.2.1-alpha** integration
+is restored in `zedo.2`: place a Building, Exchanging, or Copy/Paste Gadget in the
+wireless access point's linking input, then take the bound gadget from its output.
+Materials and returned blocks/fluids use that ME network before player inventories.
+The access point must be loaded, powered, and have a channel; the gadget has no
+wireless distance limit. AE2 remains optional. Patchouli integration is still disabled.
 The upstream MIT license and author attribution are preserved.
 
 ### Build and test
 
 ```sh
-./gradlew clean build
-./gradlew runClientData runServerData
+bash gradlew clean build
+bash gradlew runClientData runServerData
 ```
 
 The distributable jar is in `build/libs/`; the `-sources.jar` is not a mod to
@@ -64,3 +68,40 @@ as a successful physical-key test. The complete TECH pack, its Vulkan renderer,
 large builds, mod-specific machine contents, and third-party protection mods
 still need their own gameplay acceptance. No production server was restarted
 as part of these isolated tests.
+
+### AE2 verification — 2026-10-18
+
+`bash gradlew build` runs the existing 16 data checks with the TECH AE2 version.
+`bash gradlew runServer -PwithoutAE2` verifies the optional-dependency startup path.
+For gameplay verification, use an isolated world named `AE2Verification` in
+`runs/client/saves/`, with the Minecraft Automation NeoForge test bridge in
+`runs/client/mods/`. Enable its authenticated local Java scratch feature only for
+this test profile, then run:
+
+```sh
+bash gradlew runClient -PtestWorld=AE2Verification
+python3 scripts/verify-ae2.py
+```
+
+The verifier refuses other worlds and uses the real server thread, AE2 drive and
+item/fluid cells, and client menu packets. It covers all three gadget links,
+simulation, shortages, item components, exact item/fluid transfers, full-cell
+remainders, survival building/undo, distance beyond the wireless range, and
+quantum-ring relocation with block-entity data. Reports stay in ignored
+`runs/evidence/`; no test bridge or credentials are included in the release jar.
+
+The cut/paste gadget now defaults to non-replacing placement. Existing explicitly
+saved settings are retained. In non-replacing mode an occupied or unloaded
+non-air destination rejects the whole paste before it starts, keeping the cut
+contents for another attempt. Explicit replacement still voids destination drops
+and is not undoable. Missing/empty undo records now safely do nothing.
+
+After completing the verifier, close the test client normally and restart the
+same world, then run `python3 scripts/verify-ae2.py --verify-restart` to check
+saved links, reloaded stock, loss of power, and removal of the bound access point.
+
+Attached wall signs are also retained during cut animations: temporary support
+stays until the batch has captured its source blocks and counts as solid during
+placement. `python3 scripts/verify-ae2.py --verify-signs` verifies a 400-position
+cut (longer than the animation) with two animation modes, front/back label text,
+and absence of duplicate sign drops.

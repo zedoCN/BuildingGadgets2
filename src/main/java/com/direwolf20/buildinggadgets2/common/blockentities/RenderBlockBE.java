@@ -4,8 +4,10 @@ import com.direwolf20.buildinggadgets2.client.particles.fluidparticle.FluidFlowP
 import com.direwolf20.buildinggadgets2.client.particles.itemparticle.ItemFlowParticleData;
 import com.direwolf20.buildinggadgets2.setup.Registration;
 import com.direwolf20.buildinggadgets2.util.GadgetUtils;
+import com.direwolf20.buildinggadgets2.common.events.ServerTickHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -27,6 +29,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import static com.direwolf20.buildinggadgets2.util.GadgetUtils.getSimpleItemForBlock;
 
@@ -39,6 +42,9 @@ public class RenderBlockBE extends BlockEntity {
     public boolean shrinking;
     public boolean exchanging;
     public byte renderType;
+    // Keep the temporary support until every source block (including attached signs)
+    // has been read. Removing it early lets neighbour updates destroy pending data.
+    public UUID cutOperation;
 
     public RenderBlockBE(BlockPos pos, BlockState state) {
         super(com.direwolf20.buildinggadgets2.setup.Registration.RenderBlock_BE.get(), pos, state);
@@ -142,6 +148,7 @@ public class RenderBlockBE extends BlockEntity {
 
     public void tickServer() {
         increaseDrawSize();
+        if (cutOperation != null && drawSize <= 0 && ServerTickHandler.buildMap.containsKey(cutOperation)) return;
         if (shrinking && drawSize <= 0) {
             if (exchanging) {
                 shrinking = false;
@@ -250,6 +257,7 @@ public class RenderBlockBE extends BlockEntity {
         this.exchanging = input.getBooleanOr("exchanging", false);
         this.drawSize = input.getByteOr("drawSize", (byte) 0);
         this.renderType = input.getByteOr("renderType", (byte) 0);
+        this.cutOperation = input.read("cutOperation", UUIDUtil.CODEC).orElse(null);
         this.blockEntityData = input.read("blockEntityData", CompoundTag.CODEC).orElse(null);
     }
 
@@ -269,6 +277,7 @@ public class RenderBlockBE extends BlockEntity {
         output.putBoolean("exchanging", exchanging);
         output.putByte("drawSize", this.drawSize);
         output.putByte("renderType", this.renderType);
+        if (cutOperation != null) output.store("cutOperation", UUIDUtil.CODEC, cutOperation);
         if (blockEntityData != null)
             output.store("blockEntityData", CompoundTag.CODEC, this.blockEntityData);
     }
