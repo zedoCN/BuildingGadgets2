@@ -154,4 +154,3 @@ def verify_signs():
 if __name__=='__main__':
  import sys
  verify_restart() if '--verify-restart' in sys.argv else verify_signs() if '--verify-signs' in sys.argv else main()
-
